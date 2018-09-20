@@ -1,1 +1,1 @@
-Simple Vacuum Chest that sucks in items within a given radius when a wire pulse is applied.
+Simple Vacuum Chest that sucks in items within a given radius when a wire pulse is applied. Needs free slots in it's inventory or refuses to vacuum.
