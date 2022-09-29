@@ -1,15 +1,15 @@
-using System.Diagnostics;
+using Newtonsoft.Json;
 using System.IO;
+using System.Text;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.ModLoader.IO;
 
 namespace VacuumChest
 {
 	class VacuumChest : Mod
 	{
-		internal static VacuumChest instance;
+
 		
 		public VacuumChest()
 		{
@@ -18,7 +18,7 @@ namespace VacuumChest
 
 		public override void Load()
 		{
-			instance = this;
+
 		}
 		
 		public override void HandlePacket(BinaryReader reader, int whoAmI)
@@ -28,13 +28,24 @@ namespace VacuumChest
 			switch (msgType)
 			{
 				case VacuumChestMessageType.VacuumItem:
-					if (Main.netMode == 1)
+					if (Main.netMode == NetmodeID.MultiplayerClient)
 					{
 						int itemID = reader.ReadInt32();
 						int chestID = reader.ReadInt32();
 						int chestIndex = reader.ReadInt32();
-						Item chestItem = reader.ReadItem();
-						int stackSize = reader.ReadInt32();
+
+						// Deserialize received item
+						Item chestItem;
+                        using (var memoryStream  = new MemoryStream())
+                        using (var streamReader  = new StreamReader(stream: memoryStream, encoding: Encoding.UTF8, bufferSize: 4096, leaveOpen: true))
+						using (var jsonReader    = new JsonTextReader(streamReader))
+						{
+							JsonSerializer jsonSerializer = new();
+							Item deserializedItem = jsonSerializer.Deserialize(jsonReader) as Item;
+							chestItem = deserializedItem as Item;
+						}
+
+                        int stackSize = reader.ReadInt32();
 						
 						Main.item[itemID] = new Item();
 
@@ -47,7 +58,7 @@ namespace VacuumChest
 					}
 					break;
 				default:
-					ErrorLogger.Log("VacuumChest: Unknown Message type: " + msgType);
+					Logger.Error("VacuumChest: Unknown Message type: " + msgType);
 					break;
 			}
 		}
